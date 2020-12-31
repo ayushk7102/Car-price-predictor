@@ -4,72 +4,88 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv('/home/ayush/Py_projects/ML Intro/car_price.csv')
 
-print(df.columns)
+#print(df.columns)
+#print(df.shape)
 
 
+def process():	#pre-processing data 
 
-def process():
+#converting categorical variables into one hot encoding
 
-	fuel_num = {
-	  "Diesel": 0,
-	  "Petrol": 1,
-	  "LPG": 2,
-	  "CNG": 3
-	} 
-
-	list_fuel = []
-	for i in range (len(df.fuel)):
-		old = (df['fuel'][i])
-		list_fuel.append(fuel_num[old])
+	df['petrol'] = df['fuel'].replace({"Petrol": 1, "Diesel": 0 , "CNG" : 0, "LPG": 0})
+	df['diesel'] = df['fuel'].replace({"Petrol": 0, "Diesel": 1 , "CNG" : 0, "LPG": 0})
+	df['cng'] = df['fuel'].replace ({"Petrol": 0, "Diesel": 0 , "CNG" : 1, "LPG": 0})
+	df['lpg'] = df['fuel'].replace ({"Petrol": 0, "Diesel": 0 , "CNG" : 0, "LPG": 1})
 	
-	df['fuelx'] = list_fuel
 
-	seller_num = {
-	  "Individual": 0,
-	  "Dealer": 1,
-	  "Trustmark Dealer": 2
-	} 
+	#print(df.seller_type.value_counts())
 
-	list_seller = []
-	for i in range (len(df.seller_type)):
-		old = (df['seller_type'][i])
-		list_seller.append(seller_num[old])
+	df['indiv'] = df['seller_type'].replace({"Individual": 1, "Dealer": 0, "Trustmark Dealer": 0})
+	df['dealer'] = df['seller_type'].replace({"Individual": 0, "Dealer": 1, "Trustmark Dealer": 0})
+	df['trustmd'] = df['seller_type'].replace({"Individual": 0, "Dealer": 0, "Trustmark Dealer": 1})
 
+
+
+	df['manual'] = df['transmission'].replace({"Manual":1, "Automatic": 0})
+	df['auto'] = df['transmission'].replace({"Manual":0, "Automatic": 1})
 	
-	df['sellerx'] = list_seller
 
-	trans_num = {
-	  "Manual": 0,
-	  "Automatic": 1
-	  }
+	#print(df.owner.value_counts())
 
-	list_trans = []
+	df['owner1'] = df['owner'].replace({'First Owner':1, 'Second Owner':0, 'Third Owner':0, 'Fourth & Above Owner':0,
+ 'Test Drive Car':0})
+	df['owner2'] = df['owner'].replace({'First Owner':0, 'Second Owner':1, 'Third Owner':0, 'Fourth & Above Owner':0,
+ 'Test Drive Car':0})
+	df['owner3'] = df['owner'].replace({'First Owner':0, 'Second Owner':0, 'Third Owner':1, 'Fourth & Above Owner':0,
+ 'Test Drive Car':0})
+	df['owner4'] = df['owner'].replace({'First Owner':0, 'Second Owner':0, 'Third Owner':0, 'Fourth & Above Owner':1,
+ 'Test Drive Car':0})
+	df['tdcar'] = df['owner'].replace({'First Owner':0, 'Second Owner':0, 'Third Owner':0, 'Fourth & Above Owner':0,
+ 'Test Drive Car':1})
 
-	for i in range(len(df.transmission)):
-	  	old = df['transmission'][i]
-	  	list_trans.append(trans_num[old])
+	#implemented milex for numeric mileage
+	df['mileage'] = df['mileage'].fillna(0)
 
-	df['transx'] = list_trans
+	df['milex'] = df['mileage'].str.replace('kmpl', '')
+	df['milex'] = df['milex'].str.replace('km/kg', '').astype(float)
+
+	df['milex'] = df['milex'].astype(float)
 
 
-	owner_num = {
-	  "First Owner": 1,
-	  "Second Owner": 2,
-	  "Third Owner": 3,
-	  "Fourth & Above Owner": 4,
-	  "Test Drive Car": 5
-	} 
+	df['milex'] = df['milex'].fillna(0)
 
-	list_owner = []
+	#implemented enginex for numeric engine cc
+	df['enginex'] = df['engine'].str.replace(' CC', '').astype(float)
+	df['enginex'] = df['enginex'].fillna(0)
 
-	for i in range(len(df.owner)):
-	  	old = df['owner'][i]
-	  	list_owner.append(owner_num[old])
 
-	df['ownerx'] = list_owner
+	#implement max_power as powerx 
+	df['powerx'] = df['max_power'].str.replace(' bhp', '')
+	df['powerx'] = df['powerx'].fillna(0)
 
-	print(df.sellerx.unique())
+	l = []
+
+	for i in range (len(df.powerx)):
+		try:
+			m = df['powerx'][i]
+			if m == '':
+				l.append(float(0))
+			else:
+				l.append(float(df['powerx'][i]))
+
+		except ValueError:
+			print('Float conversion fail'+ '\''+df['powerx'][i]+'\'')
+
+
+	#implement torquex, ignore nm Nm case, rpmx will store @rpm
+	x = df['torque'].str.split('@')
+	print(x)
+	#print(df.torque.value_counts())
+	
+	
+
+
+
 
 process()
 
-print(df.max_power.unique())
