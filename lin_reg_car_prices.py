@@ -12,6 +12,34 @@ df = pd.read_csv(w10_csv)
 #print(df.shape)
 
 
+
+def return_dash_avg(ls):
+	sec = str(ls[-1])
+	sec_str =""
+	for i in range(0, len(sec)):
+		if(sec[i].isdigit()):
+			sec_str+=sec[i]
+		else:
+			break
+	sec_f = float(sec_str)
+	fir = str(ls[-2])
+
+	f_str = ""
+	for i in range(len(fir)-1, -1, -1):
+		if(fir[i].isdigit()):
+			f_str+=fir[i]
+		else:
+			break
+	f_str = ''.join(reversed(f_str))
+	
+	if(f_str == ''):
+		f_flt =0
+	else:
+		f_flt = float(f_str)
+
+		return (f_flt+sec_f)/2.0
+
+
 def process():	#pre-processing data 
 
 #converting categorical variables into one hot encoding
@@ -82,13 +110,87 @@ def process():	#pre-processing data
 
 
 	#implement torquex, ignore nm Nm case, rpmx will store @rpm
-	x = df['torque'].str.split('@')
-	print(x)
+	#x = df['torque'].str.split('@')
+	#x = df['torque'].str.split('at')
+
+	countat= 0 
+	countatrate = 0
+	for i in range(len(df.torque)):
+		iss = str(df['torque'][i])
+		if "at" in iss:
+			countat+=1
+		elif "@" in iss:
+			countatrate+=1
+		else:
+			#print(iss+ " "+str("at" in iss) )
+			pass
+
+	print('at : '+str(countat)+ ',   @ :'+str(countatrate) + ' TOTAL : '+str(countat+ countatrate))
+	print(len(df.torque))
+
+
+	df['torquex'] = np.nan
+	df['torq'] = np.nan
+	df['rpmx'] = np.nan
+	counttor = 0
+
+	for i in range(len(df.torquex)):
+		torqx=""
+		avg = 0
+		Nm_val = 0
+		rpm = 0
+
+		torq = str(df['torque'][i])
+		if "," in torq:
+			torq = torq.replace(',','')
+
+		if " at " in torq:
+			torq = torq.replace(' at ','@')
+
+		if "(kgm@ rpm)" in torq:
+			#print(torq)
+			torq = torq[0:torq.index("(kgm@ rpm)")]
+			Nm_val = float(torq.split('@')[0])*9.81
+
+			torq = str(round(Nm_val,3)) + torq[torq.index('@'):]
+
+
+		elif "Nm" in torq:
+			Nm_val = torq.split('Nm')[0]
+
+		if "/" in torq:
+			torq=torq.replace('/','@')
+
+		if "-" in torq: 
+			avg = return_dash_avg(torq.split('-'))
+			torq = torq.split('@')[0] +'@' + str(avg)+ 'rpm'
+
+		elif "-" not in torq :
+
+			pass 
+
+		if "rpm" not in torq:
+			if(torq == 'nan'):
+				pass
+				if '@' in torq:
+					torq+='rpm'
+			else:
+				pass
+		if "@" in torq:
+				tor_str = torq.split('@')[0]
+				
+				print(torq)
+				counttor+=1
+
+	print(counttor)
+
+	#After processing 96.85% of torque variables are formatted for use (7872/8128)
+
 	#print(df.torque.value_counts())
 	
 	
 process()
 
-print(df[df['name'].str.contains("SX4")]['selling_price'])
 
 print(df.columns)
+
