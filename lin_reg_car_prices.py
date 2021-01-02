@@ -2,8 +2,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('/home/ayush/Py_projects/ML Intro/car_price.csv')
+#local filepath strings
 
+w10_csv = r"C:\Users\ayush\OneDrive\Desktop\ML Intro\car_prices.csv" 
+lin_csv = '/home/ayush/Py_projects/ML Intro/car_price.csv'
+
+df = pd.read_csv(w10_csv)
 #print(df.columns)
 #print(df.shape)
 
@@ -83,9 +87,8 @@ def process():	#pre-processing data
 	#print(df.torque.value_counts())
 	
 	
-
-
-
-
 process()
 
+print(df[df['name'].str.contains("SX4")]['selling_price'])
+
+print(df.columns)
