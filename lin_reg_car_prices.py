@@ -126,7 +126,6 @@ def process():	#pre-processing data
 			pass
 
 	#print('at : '+str(countat)+ ',   @ :'+str(countatrate) + ' TOTAL : '+str(countat+ countatrate))
-	print(len(df.torque))
 
 
 	df['torquex'] = np.nan
@@ -249,8 +248,19 @@ def process():	#pre-processing data
 	df['nmx'] = nms
 	df['rpmx'] = rpms
 
+	df['max_powerx'] = np.nan
+	max_powx = []
+	for i in range(len(df.powerx)):
+		if(df['powerx'][i] != ''):
+			max_powx.append(float(df['powerx'][i]))
+		else:
+			max_powx.append(0)
 
-	print(df[:][['torque','nmx','rpmx']].tail(20))
+	df['max_powerx'] = max_powx
+
+
+
+	#print(df[:][['torque','nmx','rpmx']].tail(20))
 	
 
 
@@ -260,10 +270,33 @@ def process():	#pre-processing data
 	#After processing 96.85% of torque variables are formatted for use (7872/8128)
 
 	#print(df.torque.value_counts())
+
+def model():
+	np.set_printoptions(suppress=True)
+	print(df.columns)
+
+	#df['powerx'] = pd.to_numeric(df["powerx"], downcast="float")
+
+	x0 = pd.DataFrame.to_numpy(df.loc[:, ['year', 'km_driven', 
+       'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]])
+
+
+	print(x0[0])
+	x = pd.DataFrame.to_numpy(df.loc[:, df.columns != 'selling_price'])
+	y = pd.DataFrame.to_numpy(df.loc[:, ['selling_price']])
+
+	print(x[0])
+	print(y[0])
+
+
+
+
 	
 	
 process()
+model()
 
 
-print(df.columns)
 
