@@ -125,20 +125,24 @@ def process():	#pre-processing data
 			#print(iss+ " "+str("at" in iss) )
 			pass
 
-	print('at : '+str(countat)+ ',   @ :'+str(countatrate) + ' TOTAL : '+str(countat+ countatrate))
+	#print('at : '+str(countat)+ ',   @ :'+str(countatrate) + ' TOTAL : '+str(countat+ countatrate))
 	print(len(df.torque))
 
 
 	df['torquex'] = np.nan
-	df['torq'] = np.nan
-	df['rpmx'] = np.nan
+	
+
 	counttor = 0
+	torqs = []
+	countbad = 0
+
 
 	for i in range(len(df.torquex)):
 		torqx=""
 		avg = 0
 		Nm_val = 0
 		rpm = 0
+
 
 		torq = str(df['torque'][i])
 		if "," in torq:
@@ -165,9 +169,12 @@ def process():	#pre-processing data
 			avg = return_dash_avg(torq.split('-'))
 			torq = torq.split('@')[0] +'@' + str(avg)+ 'rpm'
 
-		elif "-" not in torq :
+		
 
-			pass 
+		if "~" in torq:
+			avg_rpm = (return_dash_avg(torq.split('@')[1].split('~')))
+			torq = torq.split('@')[0]+'@'+str(avg_rpm)+'rpm'
+			
 
 		if "rpm" not in torq:
 			if(torq == 'nan'):
@@ -178,11 +185,77 @@ def process():	#pre-processing data
 				pass
 		if "@" in torq:
 				tor_str = torq.split('@')[0]
-				
-				print(torq)
+				torqs.append(torq)
+				#print(torq)
 				counttor+=1
+		else:
+			if torq == 'nan':
+				countbad+=1
+				torqs.append('nan')
 
-	print(counttor)
+			else:
+				torqs.append(torq)
+				countbad+=1
+				
+
+	df['torquex'] = torqs
+	nms = []
+	rpms = []
+
+	df['nmx'] = np.nan
+	df['rpmx'] = np.nan
+
+	countx=0
+
+	for i in range(len(df.torquex)):
+		torq = str(df['torquex'][i])
+		t = torq.split('@')
+		nm = t[0]
+		nmx =''
+
+
+		for j in range(len(nm)):
+			if nm[j].isalpha() or nm[j] == '(':
+				break
+			else:
+				nmx+=nm[j]
+
+		
+		if nmx == '':
+			nms.append(0)
+		else:
+			nms.append(float(nmx))
+
+
+		if '@' in torq:
+			rpm = t[1]
+			rpmx = ''
+			for k in range(len(rpm)):
+				if rpm[k].isalpha() or rpm[k] == '(':
+					break
+				else:
+					rpmx+=rpm[k]
+
+			if rpmx == '':
+				rpms.append(0)
+			else:
+				rpms.append(float(rpmx))
+
+		
+		else:
+			rpms.append(0)
+
+
+	df['nmx'] = nms
+	df['rpmx'] = rpms
+
+
+	print(df[:][['torque','nmx','rpmx']].tail(20))
+	
+
+
+	#print(counttor)
+	#print(countbad)
 
 	#After processing 96.85% of torque variables are formatted for use (7872/8128)
 
