@@ -40,6 +40,8 @@ def return_dash_avg(ls):
 		return (f_flt+sec_f)/2.0
 
 
+
+
 def process():	#pre-processing data 
 
 #converting categorical variables into one hot encoding
@@ -259,6 +261,11 @@ def process():	#pre-processing data
 	df['max_powerx'] = max_powx
 
 
+	#replace nan's in seats with mean
+
+	df['seats'].fillna((df['seats'].median()), inplace=True)
+
+
 
 	#print(df[:][['torque','nmx','rpmx']].tail(20))
 	
@@ -272,31 +279,54 @@ def process():	#pre-processing data
 	#print(df.torque.value_counts())
 
 def model():
-	np.set_printoptions(suppress=True)
-	print(df.columns)
+	np.set_printoptions(suppress=True) # otherwise prints ndarray in scientific notation, set False for that
+	#print(df.columns)
 
 	#df['powerx'] = pd.to_numeric(df["powerx"], downcast="float")
-
-	x0 = pd.DataFrame.to_numpy(df.loc[:, ['year', 'km_driven', 
+	x0 = pd.DataFrame.to_numpy(df.loc[:, df.columns != 'selling_price'])
+	
+	#print(x0[0])
+	
+	x = pd.DataFrame.to_numpy(df.loc[:, ['year', 'km_driven', 
        'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
        'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
        'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]])
 
-
-	print(x0[0])
-	x = pd.DataFrame.to_numpy(df.loc[:, df.columns != 'selling_price'])
 	y = pd.DataFrame.to_numpy(df.loc[:, ['selling_price']])
 
-	print(x[0])
-	print(y[0])
+	#pre-append X with 1xN array of ones
+	one_n = np.ones(len(x))
+	x = np.c_[one_n, x]
 
+	#finding theta
+	xt = np.transpose(x)
+	xt_x = np.matmul(xt, x)
 
+	xt_x_inv = np.linalg.inv(xt_x) #ERROR coming HERE!
 
+	inv_prod = np.matmul(xt_x_inv, xt)
+
+	theta = np.matmul(inv_prod, y)
+
+	print(theta)
+
+	print(theta.shape)
 
 	
 	
 process()
 model()
+
+def test():
+	t = df.loc[:, ['year', 'km_driven', 
+       'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
+	
+	print(t.isnull().sum())
+
+
+#test()
 
 
 
