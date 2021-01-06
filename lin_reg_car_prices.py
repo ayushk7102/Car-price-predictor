@@ -11,6 +11,8 @@ df = pd.read_csv(w10_csv)
 #print(df.columns)
 #print(df.shape)
 
+params = np.empty([23,1])
+
 
 
 def return_dash_avg(ls):
@@ -292,6 +294,11 @@ def model():
        'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
        'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]])
 
+	t = df.loc[:, ['year', 'km_driven', 
+       'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
+
 	y = pd.DataFrame.to_numpy(df.loc[:, ['selling_price']])
 
 	#pre-append X with 1xN array of ones
@@ -308,21 +315,38 @@ def model():
 
 	theta = np.matmul(inv_prod, y)
 
+	params[:] = theta 
+
 	print(theta)
 
 	print(theta.shape)
 
+	predict(pd.DataFrame.to_numpy(t))
+
+
+
+def predict(arr):
+	price = 0.0
+
+	arr = np.insert(arr, 0, 1., axis=0)
+
+	print(arr.shape) 
+	print(arr)
+	print(params)
 	
+
 	
 process()
 model()
+
 
 def test():
 	t = df.loc[:, ['year', 'km_driven', 
        'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
        'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
        'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
-	
+
+
 	print(t.isnull().sum())
 
 
