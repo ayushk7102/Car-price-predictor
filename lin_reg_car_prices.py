@@ -7,12 +7,16 @@ import matplotlib.pyplot as plt
 w10_csv = r"C:\Users\ayush\OneDrive\Desktop\ML Intro\car_prices.csv" 
 lin_csv = '/home/ayush/Py_projects/ML Intro/car_price.csv'
 
-df = pd.read_csv(w10_csv)
+r_bound = 0.3
+df = pd.read_csv(lin_csv)
 #print(df.columns)
 #print(df.shape)
 
+
+
 params = np.empty([23,1])
 
+params_test = np.empty([9,1])
 
 
 def return_dash_avg(ls):
@@ -88,15 +92,17 @@ def process():	#pre-processing data
 	df['milex'] = df['milex'].astype(float)
 
 
-	df['milex'] = df['milex'].fillna(0)
+	df['milex'] = df['milex'].fillna(df['milex'].mean())
 
 	#implemented enginex for numeric engine cc
 	df['enginex'] = df['engine'].str.replace(' CC', '').astype(float)
-	df['enginex'] = df['enginex'].fillna(0)
+	df['enginex'] = df['enginex'].fillna(df.enginex.mean())
 
 
 	#implement max_power as powerx 
+
 	df['powerx'] = df['max_power'].str.replace(' bhp', '')
+	#print(df[['max_power','powerx']][:].head())
 	df['powerx'] = df['powerx'].fillna(0)
 
 	l = []
@@ -280,6 +286,78 @@ def process():	#pre-processing data
 
 	#print(df.torque.value_counts())
 
+
+def r_with_price(n):
+	prc = df['selling_price']
+
+	coeffs = (np.corrcoef(x=n.T, y=prc.T))
+	return coeffs[1][0]
+
+def get_x_array(arr):
+	list_col = []
+	for column in arr.columns:
+		r_w_pr = r_with_price(df[column])
+		if(abs(r_w_pr) > r_bound ):
+			list_col.append(column)
+
+	return df[:][list_col]
+
+def elim_model():
+	np.set_printoptions(suppress=True) # otherwise prints ndarray in scientific notation, set False for that
+	#print(df.columns)
+
+	#df['powerx'] = pd.to_numeric(df["powerx"], downcast="float")
+	x0 = pd.DataFrame.to_numpy(df.loc[:, df.columns != 'selling_price'])
+	
+	#print(x0[0])
+	
+	x = pd.DataFrame.to_numpy(df.loc[:, ['year', 'km_driven', 
+       'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]])
+
+	t = df.loc[:, ['year', 'km_driven', 
+       'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
+
+	elim_t = get_x_array(t)
+
+	x = pd.DataFrame.to_numpy(elim_t)
+
+	y = pd.DataFrame.to_numpy(df.loc[:, ['selling_price']])
+
+	#pre-append X with 1xN array of ones
+	one_n = np.ones(len(x))
+	x = np.c_[one_n, x]
+
+	#finding theta
+	xt = np.transpose(x)
+	xt_x = np.matmul(xt, x)
+
+	xt_x_inv = np.linalg.inv(xt_x) #ERROR coming HERE!
+
+	inv_prod = np.matmul(xt_x_inv, xt)
+
+	theta = np.matmul(inv_prod, y)
+
+	params_test[:] = theta 
+	
+
+	#print(theta)
+
+	#print(theta.shape)
+
+	#df_t = pd.DataFrame.to_numpy(t)
+
+
+	print(predict(pd.DataFrame.to_numpy(t)[1]))			##IMPORTANT TESTING #1
+	#print('Actual:', df[['selling_price']][:].head() )
+
+	print(rms_error(elim_t))
+
+	pred_test(elim_t)
+
 def model():
 	np.set_printoptions(suppress=True) # otherwise prints ndarray in scientific notation, set False for that
 	#print(df.columns)
@@ -299,6 +377,8 @@ def model():
        'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
        'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
 
+	get_x_array(t)
+
 	y = pd.DataFrame.to_numpy(df.loc[:, ['selling_price']])
 
 	#pre-append X with 1xN array of ones
@@ -317,40 +397,163 @@ def model():
 
 	params[:] = theta 
 
-	print(theta)
+	#print(theta)
 
-	print(theta.shape)
+	#print(theta.shape)
 
-	predict(pd.DataFrame.to_numpy(t))
+	#df_t = pd.DataFrame.to_numpy(t)
 
+
+	predict(pd.DataFrame.to_numpy(t)[1])			##IMPORTANT TESTING #1
+	#print('Actual:', df[['selling_price']][:].head() )
 
 
 def predict(arr):
+	
 	price = 0.0
 
 	arr = np.insert(arr, 0, 1., axis=0)
+	for a, b in zip(arr, params_test): #!!!!REPLACE WITH PARAMS IF NOT USING ELIM!
 
-	print(arr.shape) 
-	print(arr)
-	print(params)
-	
+		#print(str(a)+ ' *  coeff: '+ str(b)+' = \t'+str(a*b)+'\t'+str(price)+'\n')
+		price = price + (a*b)
 
-	
-process()
-model()
+	return price
+	#print(df['selling_price'][1])
 
 
-def test():
+
+
+def pred_test(arr):
 	t = df.loc[:, ['year', 'km_driven', 
        'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
        'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
        'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
 
+	t = arr
 
-	print(t.isnull().sum())
+	#print(df.selling_price.value_counts())
+	count = 0;
+
+	for i in range(len(t)):
+		act = df.selling_price[i]
+		price = predict(pd.DataFrame.to_numpy(t)[i])
+		print('Actual : ', str(act), '\t','Predicted :', str(price), '\tOffset: ', str(float((price - act)/act)*100),'%' )
+
+
+		
+def find_corr():
+	t = df.loc[:, ['selling_price','year', 'km_driven', 
+       'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
+
+	col_names = t.columns
+
+	# for y-x correlation
+
+	pr = df.loc[:, ['selling_price']].to_numpy()
+	n = t.to_numpy()
+	i=0;
+	for column in n.T:
+		coeffs = (np.corrcoef(x=column, y=pr.T))
+		print('r for ', col_names[i], ' and selling_price : ', float(coeffs[1][0]))
+		i+=1
+
+	i=0
+	j=0
+	#for x-x correlation
+	for column in n.T:
+		j=0
+		for c2 in n.T:
+		
+				coeffs = (np.corrcoef(x=column, y=c2))
+				r_val = coeffs[1][0]
+				if(abs(r_val) > 0.6 and abs(r_val)!=1):
+					print(col_names[i], ' : ', col_names[j], '\t', float(coeffs[1][0]))
+				j+=1
+
+		i+=1		
+
+
+	#using min max scaling
+	pass
+
+def rms_error(arr): #returns value of root mean square error
+	t = df.loc[:, ['year', 'km_driven', 
+       'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
+
+	t = arr
+
+	sum = 0
+	count = 0;
+
+	for i in range(len(t)):
+		act = df.selling_price[i]
+		price = predict(pd.DataFrame.to_numpy(t)[i])
+		count+=1
+		try:
+			sum += (float(act)-float(price))**2
+		except:
+			print(str(act), ' : ', str(price))
+
+	rmse = ((sum)**(0.5))/count
+		
+	return rmse
+
+	pass
+
+def test_plot():
+	t = df.loc[:, ['selling_price','year', 'km_driven', 
+       'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
+	
+	t.plot(x='enginex', y='selling_price', style = 'o')
+	plt.show()
+
+	t.plot(x='milex', y='selling_price', style = 'o')
+	plt.show()
+
+
+
+
+	
+
+process()
+
+
+#model() ##MODEL METHOD, WITHOUT ELIMINATING BAD VARS
+
+elim_model()
+
+#find_corr()
+#test_plot()
+
+
+#pred_test()
+
+
+def test():
+	t = df.loc[:, ['year', 'km_driven', 
+       	'seats', 'petrol', 'diesel', 'cng', 'lpg', 'indiv', 'dealer', 'trustmd',
+       	'manual', 'auto', 'owner1', 'owner2', 'owner3', 'owner4', 'tdcar',
+       	'milex', 'enginex', 'nmx', 'rpmx','max_powerx' ]]
+	
+
+
+	dataTypeSeries = t.dtypes   	
+	print('Data type of each column of Dataframe :')
+	print(dataTypeSeries)
+
+
+
 
 
 #test()
+
 
 
 
